@@ -1,3 +1,4 @@
 # 用来存运维学习相关代码的一个仓库
 
-readme？我自己private的仓库我写啥readme。。。
+readme？我自己private的仓库我写啥readme。。。   
+另：求求你别问我为什么没有第一节课
