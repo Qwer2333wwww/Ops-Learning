@@ -19,101 +19,82 @@ messages = [
     "我要报名！姓名十七 手机号 13311112222 活动 街舞",
 ]
 
+# 百家姓
+SURNAMES = '赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝邬安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍虞万支柯昝管卢莫经房裘缪干解应宗丁宣贲邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠甄麴家封芮羿储靳汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲邰从鄂索咸籍赖卓蔺屠蒙池乔阴鬱胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍郤璩桑桂濮牛寿通边扈燕冀郏浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧殳沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾毋沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公'
 
-def parse_message(message):
-    """
-    使用生成器逐条解析短信
-    返回: (姓名, 电话, 项目) 或带错误标记的元组
-    """
-    # 提取姓名（中文2-4字）
-    name_pattern = r'(?:姓名|名字|我是)[：:=\s]*([^\d\W]{2,4})(?![^\d\W])'
-    name_match = re.search(name_pattern, message)
 
-    # 如果上面没匹配到，尝试匹配开头或特殊分隔的姓名
-    if not name_match:
-        # 匹配类似 "刘十 ·" 或 "何十四-" 的格式
-        name_pattern2 = r'(?:^|[\s【】]|活动申请-)([^\d\W]{2,4})(?=[\s·\-：:，,])'
-        name_match = re.search(name_pattern2, message)
-
-    name = name_match.group(1) if name_match else None
-
-    # 提取电话（11位数字）
-    phone_pattern = r'(?:电话|手机(?:号)?)[：:=\s]*(\d{11})'
-    phone_match = re.search(phone_pattern, message)
-
-    # 如果上面没匹配到，尝试匹配独立的11位数字
-    if not phone_match:
-        phone_pattern2 = r'(?<![0-9])(\d{11})(?![0-9])'
-        phone_match = re.search(phone_pattern2, message)
-
-    phone = phone_match.group(1) if phone_match else None
-
-    # 提取项目（中文/英文，不含数字）
-    project_pattern = r'(?:项目|活动|参与|节目|摊位|报名|加入|社团)[：:=\s]*(?:报名)?(?:项目)?[：:=\s]*([a-zA-Z\u4e00-\u9fa5\s]+?)(?=[；;，,。！!、|·\-\s]*(?:$|(?![a-zA-Z\u4e00-\u9fa5])))'
-    project_match = re.search(project_pattern, message)
-
-    if project_match:
-        project = project_match.group(1).strip()
-        # 清理项目名称中的无关词汇
-        project = re.sub(r'想|报名|参加|活动|填写信息', '', project).strip()
+def msg_process(message):
+    # 提取电话
+    phone_match = re.search(r'1\d{10}', message)
+    if phone_match:
+        phone = phone_match.group()
     else:
-        project = None
+        phone = None
 
-    # 检查信息完整性
-    if not name or not phone or not project:
-        return name or "未知", "信息错误", project or "未知项目"
+    # 提取姓名
+    name_matches = re.findall(r'[\u4e00-\u9fa5]{2,4}', message)
+    name = None
+    for match in name_matches:
+        if match[0] in SURNAMES:
+            name = match
+            break
 
-    return name, phone, project
+    # 提取项目
+    parts = re.split(r'[：:\-|；;，,\s]+', message)
+    project = None
+    for part in reversed(parts):
+        clean_part = re.sub(r'[^\u4e00-\u9fa5a-zA-Z]', '', part)  # 洗掉分隔符
+        if clean_part and len(clean_part) > 1:
+            project = clean_part
+            break
+
+    return (name, phone, project)
 
 
 def message_generator(messages):
-    """生成器：逐条处理短信"""
     for msg in messages:
-        yield parse_message(msg)
+        yield msg_process(msg)
 
 
 # 按项目分组
-project_dict = defaultdict(list)
+projects = defaultdict(list)
 
-print("=" * 60)
-print("解析结果：")
-print("=" * 60)
+# print("短信处理后: ")
+# print(f"{'序号':<4} {'姓名':<10} {'电话':<15} {'项目':<20}")
 
-for name, phone, project in message_generator(messages):
-    print(f"姓名: {name:6} | 电话: {phone:15} | 项目: {project}")
-
-    if phone == "信息错误":
-        project_dict[project].append((name, "信息错误"))
+for index, (name, phone, project) in enumerate(message_generator(messages), 1):
+    if name:
+        final_name = name
     else:
-        project_dict[project].append((name, phone))
+        final_name = "未知姓名"
 
-# 输出按项目分组的结果
-print("\n" + "=" * 60)
-print("按项目分组：")
-print("=" * 60)
-for project, members in sorted(project_dict.items()):
-    print(f"\n{project}: {members}")
+    if phone:
+        final_phone = phone
+    else:
+        final_phone = "未知电话"
+
+    if project:
+        final_project = project
+    else:
+        final_project = "未知项目"
+
+    # print(f"{index:<4} {final_name:<10} {final_phone:<15} {final_project:<20}")
+
+    # 分组
+    if not name or not phone or not project:
+        projects[final_project].append((final_name, "信息错误"))
+    else:
+        projects[project].append((name, phone))
+
+# print("按项目分组:  ")
+# result_dict = {}
+# for project in sorted(projects.keys()):
+#     members = projects[project]
+#     result_dict[project] = members
+# print(result_dict)
 
 # 输出每个项目的报名人数
-print("\n" + "=" * 60)
-print("各项目报名人数统计：")
-print("=" * 60)
-for project, members in sorted(project_dict.items(), key=lambda x: len(x[1]), reverse=True):
-    print(f"{project}: {len(members)}人")
-
-# 输出报名人数最多的前3个项目
-print("\n" + "=" * 60)
-print("报名人数最多的前3个项目：")
-print("=" * 60)
-top3_projects = sorted(project_dict.items(), key=lambda x: len(x[1]), reverse=True)[:3]
-for rank, (project, members) in enumerate(top3_projects, 1):
-    print(f"第{rank}名: {project} - {len(members)}人")
-    for name, phone in members:
-        print(f"  └─ {name}: {phone}")
-
-# 输出最终字典格式
-print("\n" + "=" * 60)
-print("最终数据字典：")
-print("=" * 60)
-result_dict = dict(project_dict)
-print(result_dict)
+print("\n各项目报名人数: ")
+for project, members in projects.items():
+    valid_count = sum(1 for _, phone in members if phone != "信息错误")
+    print(f"{project:<15} 总计: {len(members)}人 (有效报名: {valid_count}人)")
