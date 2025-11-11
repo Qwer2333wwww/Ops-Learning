@@ -39,6 +39,22 @@ def msg_process(message):
             name = match
             break
 
+    # 特判：处理"我是XXX"格式
+    if not name:
+        is_match = re.search(r'我是([\u4e00-\u9fa5]{2,4})', message)
+        if is_match:
+            potential_name = is_match.group(1)
+            # if potential_name[0] in SURNAMES:
+            name = potential_name
+
+    # 特判：处理"姓名XXX"格式
+    if not name:
+        name_keyword_match = re.search(r'姓名([\u4e00-\u9fa5]{2,4})[\s|：:\-；;，,]', message)
+        if name_keyword_match:
+            potential_name = name_keyword_match.group(1)
+            # if potential_name[0] in SURNAMES:
+            name = potential_name
+
     # 提取项目
     parts = re.split(r'[：:\-|；;，,\s]+', message)
     project = None
@@ -93,7 +109,6 @@ for index, (name, phone, project) in enumerate(message_generator(messages), 1):
 #     result_dict[project] = members
 # print(result_dict)
 
-# 输出每个项目的报名人数
 print("\n各项目报名人数: ")
 for project, members in projects.items():
     valid_count = sum(1 for _, phone in members if phone != "信息错误")
