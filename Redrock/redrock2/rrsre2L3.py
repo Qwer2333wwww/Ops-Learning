@@ -122,3 +122,15 @@ for rank, (project, members) in enumerate(top_projects[:3], 1):
     print(f"\n{rank}. {project} - {valid_count}人")
     for name, phone in members:
         print(f"    {name!r}, {phone!r}")
+
+# 导出为CSV表格
+import csv
+
+with open('报名信息.csv', 'w', encoding='utf-8-sig', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['项目', '姓名', '电话'])
+    for project, members in projects.items():
+        for name, phone in members:
+            writer.writerow([project, name, phone])
+
+print("\n已导出到 报名信息.csv")
