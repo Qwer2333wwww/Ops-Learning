@@ -70,6 +70,3 @@ while 1:
     if cont.lower() != 'y':
         break
 
-# import json
-# with open('registrations.json', 'w', encoding='utf-8') as f:
-#     json.dump(reg_info, f, ensure_ascii=False, indent=2)
