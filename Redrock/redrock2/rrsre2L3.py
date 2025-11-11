@@ -98,3 +98,12 @@ print("\n各项目报名人数: ")
 for project, members in projects.items():
     valid_count = sum(1 for _, phone in members if phone != "信息错误")
     print(f"{project:<15} 总计: {len(members)}人 (有效报名: {valid_count}人)")
+
+print("\n报名人数最多的前3个项目: ")
+# 按有效人数排序
+top_projects = sorted(projects.items(), key=lambda x: sum(1 for _, phone in x[1] if phone != "信息错误"), reverse=True)
+for rank, (project, members) in enumerate(top_projects[:3], 1):
+    valid_count = sum(1 for _, phone in members if phone != "信息错误")
+    print(f"\n{rank}. {project} - {valid_count}人")
+    for name, phone in members:
+        print(f"    {name!r}, {phone!r}")
